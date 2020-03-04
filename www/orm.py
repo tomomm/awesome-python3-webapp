@@ -4,6 +4,8 @@ import asyncio,logging,aiomysql
 def log(sql,args=()):
     logging.info('SQL: %s' % sql)
 
+global __pool
+
 # 创建全局连接池
 async def create_pool(loop,**kw):
     logging.info('create database connection pool...')
@@ -14,7 +16,7 @@ async def create_pool(loop,**kw):
         user = kw['user'],
         password = kw['password'],
         db = kw['db'],
-        charset = kw.get('charset','utf-8'),
+        charset = kw.get('charset','utf8'),
         autocommit = kw.get('autocommit',True),
         maxsize = kw.get('maxsize',10),
         minsize = kw.get('minsize',1),
@@ -98,14 +100,14 @@ class ModelMetaclass(type):
         escaped_fields = list(map( (lambda f: '`%s`' % f) ,fields)) # map(func, iterable[,..]) map中第一个参数时一个函数， map中后面的参数是第一个函数的参数
                                                                     # 在本语句中 是将 fields列表 根据 lamba f: '`%s`'函数 做映射，返回迭代器。再通过list()转化为列表
         # 利用python的特性 给类创建新属性，并且赋值
-        attrs['__mappings'] = mappings # 保存属性和列的映射关系
+        attrs['__mappings__'] = mappings # 保存属性和列的映射关系
         attrs['__table__'] = tableName
         attrs['__primary_key__'] = primaryKey # 主键属性名
-        attrs['__friends__'] = fields # 除主键外的属性名
+        attrs['__fields__'] = fields # 除主键外的属性名
         # 构造默认的 SELECT, INSERT, UPDATE和DELETE 语句
         attrs['__select__'] = 'select `%s`, %s from `%s`' % (primaryKey, ', '.join(escaped_fields), tableName)
         attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values (%s)' % (tableName, ', '.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields)+1))
-        attrs['__update__'] = 'update `%s` set %s where `%s`=?' % (tableName,', '.join(map((lambda f: '`%s`=?' % (mappings.get(f).name or f)), fields)))
+        attrs['__update__'] = 'update `%s` set %s where `%s`=?' % (tableName,', '.join(map((lambda f: '`%s`=?' % (mappings.get(f).name or f)), fields)),primaryKey)
         attrs['__delete__'] = 'delete from `%s` where `%s`=?' % (tableName, primaryKey)
         return type.__new__(cls, name, bases ,attrs)
 
@@ -120,7 +122,7 @@ class Model(dict, metaclass=ModelMetaclass):
         try:
             return self[key]
         except KeyError:
-            raise AttributeError(r'"Model" object has no attribute "%s"')
+            raise AttributeError(r"'Model' object has no attribute '%s'" % key)
 
     #设定 指定key 的 value
     def __setattr__(self, key, value):
@@ -192,7 +194,7 @@ class Model(dict, metaclass=ModelMetaclass):
     @classmethod
     async def findNumber(cls, selectField, where=None, args=None):
         # find number by select and where
-        sql = ['select %s _num_ from `%s`' % (selectField, cls.__table)]
+        sql = ['select %s _num_ from `%s`' % (selectField, cls.__table__)]
         if where:
             sql.append('where')
             sql.append(where)
