@@ -3,6 +3,10 @@ import asyncio,logging,aiomysql
 # 用来打印 sql语句 日志的 方法
 def log(sql,args=()):
     logging.info('SQL: %s' % sql)
+    if args:
+        logging.info('ARGS: %s' % args)
+
+logging.basicConfig(level=logging.DEBUG)
 
 global __pool
 
@@ -51,7 +55,7 @@ async def select(sql, args, size=None):
 # 使用execute函数执行 INSERT，UPDATE，DELETE语句
 # 通过rowcount 返回 结果数
 async def execute(sql, args):
-    log(sql)
+    log(sql,args)
     with (await __pool) as conn:
         try:
             cur = await conn.cursor()
@@ -82,7 +86,7 @@ class ModelMetaclass(type):
         fields = []
         primaryKey = None
         for k,v in attrs.items():
-            if isinstance(v, Field):
+            if isinstance(v, Field):  #如果 v 是 属于 Field类
                 logging.info('  found mapping: %s ==> %s' % (k,v))
                 mappings[k] = v
                 if v.primary_key:
@@ -101,6 +105,7 @@ class ModelMetaclass(type):
                                                                     # 在本语句中 是将 fields列表 根据 lamba f: '`%s`'函数 做映射，返回迭代器。再通过list()转化为列表
         # 利用python的特性 给类创建新属性，并且赋值
         attrs['__mappings__'] = mappings # 保存属性和列的映射关系
+
         attrs['__table__'] = tableName
         attrs['__primary_key__'] = primaryKey # 主键属性名
         attrs['__fields__'] = fields # 除主键外的属性名
@@ -124,27 +129,28 @@ class Model(dict, metaclass=ModelMetaclass):
         except KeyError:
             raise AttributeError(r"'Model' object has no attribute '%s'" % key)
 
-    #设定 指定key 的 value
+    #设定 指定key 的 value, 如果莫属性不存在则 按照key-value 添加一个属性和对应的值。
     def __setattr__(self, key, value):
         self[key] = value
 
     def getValue(self,key):
-        return getattr(self,key,None) # getattr(对象,属性名[,默认值]) 用于获取对象的属性
+        return getattr(self,key,None) # getattr(对象,属性名[,默认值]) 用于获取对象的属性，如果没有该属性，则添加该属性，并且赋默认值None。
 
+    # 获取某 key 对应的 value， 如果 key没有值， 则取默认值。
     def getValueOrDefault(self,key):
         value = getattr(self,key,None)
-        if value is None:
+        if value is None:  # 如果某属性值为空。
             field = self.__mappings__[key]
-            if field.default is not None:
-                 value = field.default() if callable(field.default) else field.default
+            if field.default is not None: # 则去查找它是否有默认值， 如果有，就取默认值
+                 value = field.default() if callable(field.default) else field.default  # if- else 的简化用法
                  logging.debug('using default value for %s: %s' % (key,str(value)))
-                 setattr(self,key,value) # setattr（object, attribution_name, value） 用于给对象设定属性
+                 setattr(self,key,value) # 将默认值与key对应起来。 setattr（object, attribution_name, value） 用于给对象设定属性
         return value
 
     async def save(self):
         args = list(map(self.getValueOrDefault, self.__fields__))
-        args.append(self.getValue(self.__primary_key__))
-        rows = await execute(self.__update__, args)
+        args.append(self.getValueOrDefault(self.__primary_key__))
+        rows = await execute(self.__insert__, args)
         if rows != 1:  # 此处含义未知，为什么rows 不等于1 就会失败，下同
             logging.warning('failed to insert record: affected rows: %s' % rows)
 
@@ -221,7 +227,7 @@ class Field(object):
         self.default = default
 
     def __str__(self):
-        return '<%s, %s:%s>' % (self.__class__.__name__, self.column_type, self.name)
+        return '<%s, %s:%s,%s>' % (self.__class__.__name__, self.column_type, self.name, self.primary_key)
 
 # Field子类
 class StringField(Field):
