@@ -9,12 +9,13 @@ from aiohttp import web
 from jinja2 import Environment, FileSystemLoader
 
 import www.orm as orm
-from www.coroweb import add_static
+from www.coroweb import add_static,add_routes
 
 from conf.config import configs
 
 ## handlers 是url处理模块，当handlers.py在API章节里完全编辑完再将下一行代码的双井号去掉
 ## from handlers import cookie2user , COOKIE_NAME
+import www.handlers
 
 ## 初始化jinja2的函数
 def init_jinja2(app, **kw):
@@ -141,7 +142,7 @@ async def init(loop):
 
     init_jinja2(app, filters=dict(datetime=datetime_filter))
     # 在 handlers.py 完成后， 去掉下一行井号
-    # add_routes(app, 'handlers')
+    add_routes(app, 'handlers')  #注册handlers中的 URL函数
     add_static(app)
 
     # DeprecationWarning: Application.make_handler(...) is deprecated, use AppRunner API instead

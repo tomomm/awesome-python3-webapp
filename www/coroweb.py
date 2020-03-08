@@ -4,6 +4,7 @@ from urllib import parse
 
 from aiohttp import web
 
+from www.apis import APIError
 
 ## 编写装饰函数 @get('/path')
 ## 作用：在装饰的函数执行后 设定函数的.__method__ = 'GET'
@@ -152,11 +153,11 @@ def add_route(app, fn):
         raise ValueError('@get or @post not defined in %s.' % str(fn))
     # 如果 函数fn 不是协程coroutine， 并且不是 生成器generator，将fn变为协程
     if not asyncio.iscoroutinefunction(fn) and not inspect.isgeneratorfunction(fn):
-        fn = asyncio.corotine(fn)
+        fn = asyncio.coroutine(fn)
     logging.info('add route %s %s => %s(%s)' % (method,path,fn.__name__, ', '.join(inspect.signature(fn).parameters.keys())))
     app.router.add_route(method, path, RequestHandler(app,fn))
 
-## 定义add_routes函数，自动把handler模块的所有符合条件的URL函数都注册
+## 定义add_routes函数，自动把 handlers 模块的所有符合条件的URL函数都注册
 def add_routes(app, module_name):
     n = module_name.rfind('.')
     if n == (-1):
@@ -164,13 +165,13 @@ def add_routes(app, module_name):
     else:
         name = module_name[n+1:]
         mod = getattr(__import__(module_name[:n],globals(),locals(),[name]), name)
-        for attr in dir(mod):
-            if attr.startswith('_'):
-                continue
-            fn = getattr(mod, attr)
-            if callable(fn):
-                method = getattr(fn, '__method__', None)
-                path = getattr(fn, '__route__', None)
-                if method and path:
-                    add_route(app, fn)
+    for attr in dir(mod):
+        if attr.startswith('_'):
+            continue
+        fn = getattr(mod, attr)
+        if callable(fn):
+            method = getattr(fn, '__method__', None)
+            path = getattr(fn, '__route__', None)
+            if method and path:
+                add_route(app, fn)
 

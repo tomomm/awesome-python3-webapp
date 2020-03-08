@@ -209,7 +209,7 @@ class Model(dict, metaclass=ModelMetaclass):
                 args.extend(limit)
             else:
                 raise ValueError('Invalid limit value: %s' % str(limit))
-        logging.info('修改前的sql列表：', sql)
+        logging.info('修改前的sql列表：%s' % sql)
         rs = await select(' '.join(sql), args)  # ' '.join(sql)  将 列表sql中的元素 通过 空格 练成一个字符串
         return [cls(**r) for r in rs]
 
