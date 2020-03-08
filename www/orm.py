@@ -27,6 +27,22 @@ async def create_pool(loop,**kw):
         loop = loop
     )
 
+# 创建全局连接池改
+async def create_pool2(**kw):
+    logging.info('create database connection pool...')
+    global __pool
+    __pool = await aiomysql.create_pool(
+        host = kw.get('host','localhost'),
+        port = kw.get('port',3306),
+        user = kw['user'],
+        password = kw['password'],
+        db = kw['db'],
+        charset = kw.get('charset','utf8'),
+        autocommit = kw.get('autocommit',True),
+        maxsize = kw.get('maxsize',10),
+        minsize = kw.get('minsize',1),
+    )
+
 # 使用select函数执行 SQL SELECT语句
 # 返回 查询结果集
 async def select(sql, args, size=None):
@@ -134,7 +150,7 @@ class Model(dict, metaclass=ModelMetaclass):
         self[key] = value
 
     def getValue(self,key):
-        return getattr(self,key,None) # getattr(对象,属性名[,默认值]) 用于获取对象的属性，如果没有该属性，则添加该属性，并且赋默认值None。
+        return getattr(self,key,None) # getattr(对象,属性名[,默认值]) 用于获取对象的属性，如果没有该属性，则返回None（注意： 并不会为该对象添加新的属性）。
 
     # 获取某 key 对应的 value， 如果 key没有值， 则取默认值。
     def getValueOrDefault(self,key):

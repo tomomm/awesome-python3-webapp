@@ -156,8 +156,8 @@ def add_route(app, fn):
     logging.info('add route %s %s => %s(%s)' % (method,path,fn.__name__, ', '.join(inspect.signature(fn).parameters.keys())))
     app.router.add_route(method, path, RequestHandler(app,fn))
 
-## 定义add_routers函数，自动把handler模块的所有符合条件的URL函数都注册
-def add_routers(app, module_name):
+## 定义add_routes函数，自动把handler模块的所有符合条件的URL函数都注册
+def add_routes(app, module_name):
     n = module_name.rfind('.')
     if n == (-1):
         mod = __import__(module_name,globals(),locals())
