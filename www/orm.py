@@ -6,7 +6,7 @@ def log(sql,args=()):
     if args:
         logging.info('ARGS: %s' % args)
 
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 global __pool
 
