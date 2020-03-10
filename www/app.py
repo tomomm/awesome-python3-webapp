@@ -14,7 +14,7 @@ from www.coroweb import add_static,add_routes
 from conf.config import configs
 
 ## handlers 是url处理模块，当handlers.py在API章节里完全编辑完再将下一行代码的双井号去掉
-## from handlers import cookie2user , COOKIE_NAME
+from www.handlers import cookie2user , COOKIE_NAME
 import www.handlers
 
 ## 初始化jinja2的函数
