@@ -32,15 +32,16 @@
     {#jinja2 title块#}
     <title>{% block title %} ? {% endblock %} | AwisomeDavidBlog</title>
     {# 由于app已经将src目录设置为www，所以当前目录为www #}
-    <link rel="stylesheet" href="../static/css/uikit.css">
-    <link rel="stylesheet" href="../static/css/awesome.css">
-    <script src="../static/js/jquery-3.4.1.js"></script>
-    <script src="../static/js/sha1.min.js"></script>
-    <script src="../static/js/uikit.js"></script>
-    <script src="../static/js/uikit-icons.js"></script>
-    <script src="../static/js/sticky.min.js"></script>
-    <script src="../static/js/vue.js"></script>
-    <script src="../static/js/awesome.js"></script>
+    {# 此处应用绝对路径，否则网页索引会错误 #}
+    <link rel="stylesheet" href="/static/css/uikit.css">
+    <link rel="stylesheet" href="/static/css/awesome.css">
+    <script src="/static/js/jquery-3.4.1.js"></script>
+    <script src="/static/js/sha1.min.js"></script>
+    <script src="/static/js/uikit.js"></script>
+    <script src="/static/js/uikit-icons.js"></script>
+    <script src="/static/js/sticky.min.js"></script>
+    <script src="/static/js/vue.js"></script>
+    <script src="/static/js/awesome.js"></script>
     {#jinja2 beforehead块#}
     {% block beforehead %} {# before head #} {% endblock %}
 
@@ -142,4 +143,5 @@
     </div>
 </div>
 </body>
+
 </html>
