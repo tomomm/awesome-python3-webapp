@@ -25,17 +25,18 @@ class Blog(Model):
     name = StringField(ddl='varchar(50')
     summary = StringField(ddl='varchar(200')
     content = TextField()
-    create_at = FloatField(default=time.time)
+    created_at = FloatField(default=time.time)
 
 class Comment(Model):
     __table__ = 'comments'
 
     id = StringField(primary_key=True, default=next_id, ddl='varchar(50)')
+    blog_id = StringField(ddl='varchar(50)')
     user_id = StringField(ddl='varchar(50)')
     user_name = StringField(ddl='varchar(50)')
     user_image = StringField(ddl='varchar(500)')
     content = TextField()
-    create_at = FloatField(default=time.time)
+    created_at = FloatField(default=time.time)
 ##  日期时间使用 float类型存储在数据库中，而不是datetime类型， 好处是不用关心数据库的时区以及时区转换问题
 
 

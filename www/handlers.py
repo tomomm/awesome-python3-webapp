@@ -88,9 +88,9 @@ async def index(*, page = '1'):
     if num == 0:
         blogs = []
     else:
-        blogs = await Blog.findAll(orderBy='create_at desc', limit=(p.offset, p.limit))
+        blogs = await Blog.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
     return {
-        '__template__': '__base__.html',
+        '__template__': 'blogs.html',
         'page': p,
         'blogs': blogs
     }
@@ -107,6 +107,29 @@ def register():
 def signin():
     return {
         '__template__': 'signin.html'
+    }
+
+## 用户注销
+@get('/signout')
+def signout(request):
+    referer = request.headers.get('Referer')
+    r = web.HTTPFound(referer or '/')
+    r.set_cookie(COOKIE_NAME, '-delete-', max_age=0, httponly=True)
+    logging.info('user sign out.')
+    return r
+
+## 处理日志详情页面
+@get('/blog/{id}')
+async def get_blog(id):
+    blog = await Blog.find(id)
+    comments = await Comment.findAll('blog_id=?', [id], orderBy='created_at desc')
+    for c in comments:
+        c.html_content = markdown.markdown(c.content)
+    blog.html_content = markdown.markdown(blog.content)
+    return {
+        '__template__': 'blog.html',
+        'blog': blog,
+        'comments': comments
     }
 
 ## 创建日志页面
@@ -174,3 +197,37 @@ async def api_register_user(*, email, name, passwd):
     r.content_type = 'application/json'
     r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
     return r
+
+## 获取日志详情api
+@get('/api/blogs/{id}')
+async def api_get_blog(*, id):
+    blog = await Blog.find(id)
+
+## 发表日志API
+@post('/api/blogs')
+async def api_create_blog(request,* , name, summary, content):
+    check_admin(request)
+    if not name or not name.strip():
+        raise APIValueError('name', 'name cannot be empty.')
+    if not summary or not summary.strip():
+        raise APIValueError('summary', 'summary cannot be empty.')
+    if not content or not content.strip():
+        raise APIValueError('content', 'content cannot be empty')
+    blog = Blog(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image,name=name.strip(),summary=summary.strip(),content=content.strip())
+    await blog.save()
+    return blog
+
+## 用户发表评论API
+@post('/api/blogs/{id}/comments')
+async def api_create_comment(id, request, *, content):
+    user = request.__user__
+    if user is None:
+        raise APIPermissionError('Please signin first.')
+    if not content or not content.strip():
+        raise APIValueError('content')
+    blog = await Blog.find(id)
+    if blog is None:
+        raise APIResourceNotFoundError('Blog')
+    comment = Comment(blog_id=blog.id, user_id=user.id, user_name=user.name, user_image=user.image, content=content.strip())
+    await comment.save()
+    return comment

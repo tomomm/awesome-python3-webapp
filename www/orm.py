@@ -75,6 +75,7 @@ async def execute(sql, args):
     with (await __pool) as conn:
         try:
             cur = await conn.cursor()
+            # logging.info('添加参数后sql：%s args: %s' % (sql.replace('?','%s'),args))
             await cur.execute(sql.replace('?','%s'), args)
             affected = cur.rowcount
             await cur.close()
@@ -220,7 +221,7 @@ class Model(dict, metaclass=ModelMetaclass):
         if where:
             sql.append('where')
             sql.append(where)
-        logging.info('修改前的sql列表：',sql)
+        logging.info('修改前的sql列表：'% sql)
         rs = await select(' '.join(sql), args, 1)  # ' '.join(sql)  将 列表sql中的元素 通过 空格 练成一个字符串
         if len(rs) == 0:
             return None

@@ -1,9 +1,12 @@
+{# 本页面使用的api /api/users #}
+{# 本页面跳转的页面： /  #}
 {# 继承父模板 '__base__.html' #}
 {% extends '__base__.html' %}
 {# jinja2 title块 内容替换 #}
 {% block title %} Register/注册 {% endblock %}
 {# jinja2 beforehead块 内容替换 #}
 {% block beforehead %}
+
 {# script中构建vue，向后端API提交合格的注册信息数据 #}
     <script>
         function validateEmail(email) {
@@ -20,7 +23,7 @@
                     password1: '',
                     password2: ''
                 },
-                method:{
+                methods:{
                     submit: function (event) {
                         event.preventDefault();
                         var $form = $('#vm'); // 将id为 vm 的对象转化为jquery对象
@@ -60,7 +63,7 @@
     <div class="uk-grid">
     <div class="uk-width-1-1">
         <h4>REGISTER/欢迎注册！</h4>
-        <form id="vm" v-on:submit="submit($event)" class="uk-form-stacked">
+        <form id="vm"  class="uk-form-stacked" @submit='submit($event)'>
             <div class="uk-alert uk-alert-danger uk-hidden"></div>
             <div class="uk-margin-top">
                 <label class="uk-form-label">NAME/名字:</label>
@@ -87,7 +90,7 @@
                 </div>
             </div>
             <div class="uk-margin-large">
-                <button type="submit" class="uk-button uk-button-primary"><i class="uk-icon-user"></i>REGISTER/注册</button>
+                <button type="submit" class="uk-button uk-button-primary"><i uk-icon="users"></i>REGISTER/注册</button>
             </div>
         </form>
     </div>

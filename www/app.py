@@ -49,20 +49,20 @@ async def logger_factory(app, handler):
 
 ## 认证处理工厂-- 把当前用户绑定到request上， 并对URL/manage/进行拦截，检查当前用户是否是管理员身份
 ## 需要handlers.py的支持， 当handlers.py在API章节里完全编辑再将下班代码的双井号去掉
-##async def auth_factory(app, handler):
-##    async def auth(request):
-##        logging.info('check user: %s %s' % (request.method, request.path))
-##        request.__user__ = None
-##        cookie_str = request.cookies.get(COOKIE_NAME)
-##        if cookie_str:
-##            user = await cookie2user(cookie_str)
-##            if user:
-##                logging.info('set current user: %s' % user.email)
-##                request.__user__ = user
-##        if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
-##            return web.HTTPFound('/signin')
-##        return (await handler(request))
-##    return auth
+async def auth_factory(app, handler):
+   async def auth(request):
+       logging.info('check user: %s %s' % (request.method, request.path))
+       request.__user__ = None
+       cookie_str = request.cookies.get(COOKIE_NAME)
+       if cookie_str:
+           user = await cookie2user(cookie_str)
+           if user:
+               logging.info('set current user: %s' % user.email)
+               request.__user__ = user
+       if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
+           return web.HTTPFound('/signin')
+       return (await handler(request))
+   return auth
 
 ## 数据处理工厂
 async def data_factory(app, handler):
@@ -103,7 +103,7 @@ async def response_factory(app, handler):
                 return resp
             else:
                 ## 在handlers.py完全完成后，去掉下一行双井号
-                ##r['__user__'] = request.__user__
+                r['__user__'] = request.__user__
                 resp = web.Response(body=app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 resp.content_type = 'text/html;charset=utf-8'
                 return resp
@@ -120,7 +120,7 @@ async def response_factory(app, handler):
         return resp
     return response
 
-## 时间转换
+## 自定义 jinja2 时间转换过滤器
 def datetime_filter(t):
     delta = int(time.time() - t)
     if delta < 60:
@@ -137,7 +137,7 @@ def datetime_filter(t):
 async def init(loop):
     await orm.create_pool(loop=loop, **configs.db)
     app = web.Application(loop=loop, middlewares=[
-        logger_factory, response_factory
+        logger_factory, response_factory, auth_factory
     ])
 
     init_jinja2(app, filters=dict(datetime=datetime_filter))

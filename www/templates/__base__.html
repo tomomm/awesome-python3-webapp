@@ -1,3 +1,4 @@
+{# 每个页面都有： /signin, /signup, /manage #}
 <!DOCTYPE html>
 
 {# 处理分页导航栏代码 #}
@@ -35,15 +36,7 @@
     {# 此处应用绝对路径，否则网页索引会错误 #}
     <link rel="stylesheet" href="/static/css/uikit.css">
     <link rel="stylesheet" href="/static/css/awesome.css">
-    <script src="/static/js/jquery-3.4.1.js"></script>
-    <script src="/static/js/sha1.min.js"></script>
-    <script src="/static/js/uikit.js"></script>
-    <script src="/static/js/uikit-icons.js"></script>
-    <script src="/static/js/sticky.min.js"></script>
-    <script src="/static/js/vue.js"></script>
-    <script src="/static/js/awesome.js"></script>
-    {#jinja2 beforehead块#}
-    {% block beforehead %} {# before head #} {% endblock %}
+
 
 </head>
 
@@ -142,6 +135,18 @@
         <p class="uk-text-meta" style="line-height: 0px; padding: 0px 0; margin: 0px 0;"><a href="https://aodabo.tech/" target="_blank">Zhiyuan Yang</a>. All rights reserved.</p>
     </div>
 </div>
-</body>
 
+
+
+
+</body>
+<script src="/static/js/jquery-3.4.1.js"></script>
+    <script src="/static/js/sha1.min.js"></script>
+    <script src="/static/js/uikit.js"></script>
+    <script src="/static/js/uikit-icons.js"></script>
+    <script src="/static/js/sticky.min.js"></script>
+    <script src="/static/js/vue2.js"></script>
+    <script src="/static/js/awesome.js"></script>
+{#jinja2 beforehead块#}
+    {% block beforehead %} {# before head #} {% endblock %}
 </html>
