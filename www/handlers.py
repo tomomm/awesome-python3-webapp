@@ -118,6 +118,44 @@ def signout(request):
     logging.info('user sign out.')
     return r
 
+## 获取管理页面
+@get('/manage/')
+def manage():
+    return 'redirect:/manage/comments'
+
+## 日志管理页面
+@get('/manage/blogs')
+def manage_blogs(*, page='1'):
+    return {
+        '__template__': 'manage_blogs.html',
+        'page_index': get_page_index(page)
+    }
+
+## 创建日志页面
+@get('/manage/blogs/create')
+def manage_create_blog():
+    return {
+        '__template__': 'manage_blog_edit.html',
+        'id': '',
+        'action': '/api/blogs'
+    }
+
+## 评论管理页面
+@get('/manage/comments')
+def manage_comments(*, page='1'):
+    return {
+        '__template__': 'manage_comments.html',
+        'page_index': get_page_index(page)
+    }
+
+## 用户管理页面
+@get('/manage/users')
+def manage_users(*, page='1'):
+    return {
+        '__template__': 'manage_users.html',
+        'page_index': get_page_index(page)
+    }
+
 ## 处理日志详情页面
 @get('/blog/{id}')
 async def get_blog(id):
@@ -132,14 +170,6 @@ async def get_blog(id):
         'comments': comments
     }
 
-## 创建日志页面
-@get('/manage/blogs/create')
-def manage_create_blog():
-    return {
-        '__template__': 'manage_blog_edit.html',
-        'id': '',
-        'action': '/api/blogs'
-    }
 
 ################################  API处理
 ## 用户登录验证API
@@ -198,10 +228,56 @@ async def api_register_user(*, email, name, passwd):
     r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
     return r
 
+## 删除用户api
+@post('/api/users/{id}/delete')
+async def api_delete_users(id, request):
+    check_admin(request)
+    id_buff = id
+    user = await User.find(id)
+    if user is None:
+        raise APIResourceNotFoundError('Comment')
+    await user.remove()
+    # 给被删除的用户在评论中标记
+    comments = await Comment.findAll('user_id=?',[id])
+    if comments:
+        for comment in comments:
+            id = comment.id
+            c = await Comment.find(id)
+            c.suer_name = c.user_name + '（该用户已被删除）'
+            await c.update()
+    id = id_buff
+    return dict(id=id)
+
+
+## 获取用户信息api
+@get('/api/users')
+async def api_get_users(*, page='1'):
+    page_index = get_page_index(page)
+    num = await User.findNumber('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page=p, users=())
+    users = await User.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    for u in users:
+        u.passwd = '******'
+    return dict(page=p, users=users)
+
+
 ## 获取日志详情api
 @get('/api/blogs/{id}')
 async def api_get_blog(*, id):
     blog = await Blog.find(id)
+
+## 获取日志列表api
+@get('/api/blogs')
+async def api_blogs(*, page='1'):
+    page_index = get_page_index(page)
+    num = await Blog.findNumber('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page=p, blogs=())
+    blogs = await Blog.findAll(orderBy='create_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, blogs=blogs)
 
 ## 发表日志API
 @post('/api/blogs')
@@ -231,3 +307,24 @@ async def api_create_comment(id, request, *, content):
     comment = Comment(blog_id=blog.id, user_id=user.id, user_name=user.name, user_image=user.image, content=content.strip())
     await comment.save()
     return comment
+
+## 过去评论信息api
+@get('/api/comments')
+async def api_comments(*, page='1'):
+    page_index = get_page_index(page)
+    num = await Comment.findNumber('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page=p, comments=())
+    comments = await Comment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, comments=comments)
+
+## 管理员删除评论api
+@post('/api/comments/{id}/delete')
+async def api_delete_comments(id, request):
+    check_admin(request)
+    c = await Comment.find(id)
+    if c is None:
+        raise APIResourceNotFoundError('Comment')
+    await c.remove()
+    return dict(id=id)
